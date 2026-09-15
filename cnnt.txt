@@ -1,0 +1,131 @@
+CNN 5-FOLD LOSO EVALUATION REPORT
+=================================
+
+Project: Speaker-independent speech emotion recognition on IEMOCAP
+Run date: 08 September 2026
+Status: COMPLETED SUCCESSFULLY
+
+1. FINAL RESULT
+---------------
+Five-fold Leave-One-Session-Out (LOSO) evaluation was completed for the CNN
+baseline. Each of the five IEMOCAP sessions served as the test set exactly once.
+The validation session was also held out, and the remaining three sessions were
+used for training. No speaker occurred in more than one split within a fold.
+
+Mean test accuracy: 45.64%
+Accuracy standard deviation: 3.59 percentage points
+Mean test macro-F1: 45.21%
+Macro-F1 standard deviation: 2.80 percentage points
+Mean test weighted-F1: 43.62%
+
+The recommended headline result for the CNN baseline is therefore:
+
+  Accuracy = 45.64% +/- 3.59%
+  Macro-F1 = 45.21% +/- 2.80%
+
+The standard deviations above are sample standard deviations across the five
+session-level test folds.
+
+2. CROSS-VALIDATION PROTOCOL
+----------------------------
+Fold  Test session  Validation session  Training sessions  Test samples
+1     Session 1     Session 5           Sessions 2,3,4     1,085
+2     Session 2     Session 1           Sessions 3,4,5     1,023
+3     Session 3     Session 2           Sessions 1,4,5     1,151
+4     Session 4     Session 3           Sessions 1,2,5     1,031
+5     Session 5     Session 4           Sessions 1,2,3     1,241
+
+All 5,531 selected four-class IEMOCAP utterances were tested exactly once across
+the five folds. The folds were predefined and deterministic; sessions were not
+selected randomly during training.
+
+3. MODEL AND TRAINING CONFIGURATION
+-----------------------------------
+Input representation: 64-bin log-Mel spectrogram
+Architecture: three convolution blocks with 32, 64, and 128 channels, batch
+normalization, ReLU, pooling, adaptive average pooling, dropout, and a four-class
+linear output layer
+Trainable parameters: 93,636
+Emotion classes: angry, happy, neutral, sad
+Sample rate: 16,000 Hz
+Maximum audio duration: 12 seconds
+Batch size: 32
+Optimizer: AdamW
+Learning rate: 0.001
+Weight decay: 0.0001
+Loss: class-weighted cross-entropy
+Maximum epochs per fold: 30
+Early-stopping patience: 7 epochs
+Random seed: 42
+Augmentation: none
+Automatic mixed precision: disabled for numerical stability on this CNN
+
+GPU node: gnode6
+GPU: NVIDIA Quadro P4000, 8 GB
+Slurm job: 27061
+Total five-fold training and evaluation wall time: 1 hour 5 minutes 8 seconds
+Job result: COMPLETED, exit code 0
+
+4. PER-FOLD RESULTS
+-------------------
+Fold  Test session  Epochs  Best epoch  Val macro-F1  Test accuracy  Test macro-F1
+1     Session 1     28      21          48.79%        50.32%         49.59%
+2     Session 2     12       5          45.31%        41.45%         42.71%
+3     Session 3     30      23          47.81%        47.26%         44.22%
+4     Session 4     30      25          46.71%        46.46%         46.30%
+5     Session 5     20      13          44.83%        42.71%         43.26%
+
+The checkpoint with the highest validation macro-F1 in each fold was used for
+that fold's test evaluation. Test results were not used for model selection.
+
+5. CLASS-WISE RESULTS
+---------------------
+Mean class F1 across the five folds:
+
+angry:   48.13%
+happy:   29.14%
+neutral: 41.35%
+sad:     62.24%
+
+The CNN performed best on sad speech and worst on happy speech. Happy utterances
+were frequently confused with other emotions in several sessions. Variation in
+the fold scores also confirms that performance depends on the held-out speakers,
+which is why the five-fold mean is more reliable than a single fixed split.
+
+6. INTERPRETATION
+-----------------
+The completed LOSO experiment establishes a proper speaker-independent CNN
+baseline. Its mean macro-F1 of 45.21% is higher and more representative than the
+earlier single-run Session-5 macro-F1 of 36.72%. The values are not contradictory:
+the earlier run was one realization on one held-out session, while LOSO averages
+performance across every session and independently selects a checkpoint in each
+fold. The fold range (42.71% to 49.59% macro-F1) shows measurable cross-session
+variation.
+
+This baseline can now be compared fairly with Wav2Vec2 plus MLP and the frozen-LLM
+model, provided those models use these exact same five folds and report the same
+mean and standard-deviation metrics.
+
+7. OUTPUT FILES
+---------------
+Aggregate summary:
+  artifacts/runs/cnn_baseline/loso/summary.json
+Fold-level result list:
+  artifacts/runs/cnn_baseline/loso/fold_results.json
+
+Each fold_1 through fold_5 directory contains:
+  best.pt                         selected checkpoint
+  last.pt                         final checkpoint
+  config.json                     exact fold configuration
+  history.json                    epoch-by-epoch training history
+  test_results/metrics.json       complete test metrics
+  test_results/confusion_matrix.csv
+  test_results/confusion_matrix.png
+
+Local root directory:
+  artifacts/runs/cnn_baseline/loso/
+
+8. SCOPE CONFIRMATION
+---------------------
+Only the CNN baseline was trained and evaluated in this five-fold job. Wav2Vec2,
+HuBERT, BLOOMZ, and other LLM models were not started.

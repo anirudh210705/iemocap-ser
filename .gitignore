@@ -1,0 +1,16 @@
+data/
+artifacts/
+checkpoints/
+results/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Large local/server bundles and third-party reference material
+*.tar.gz
+multimodal.pdf
+
+# Generated presentation files
+*.pptx

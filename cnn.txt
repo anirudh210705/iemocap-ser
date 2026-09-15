@@ -1,0 +1,119 @@
+CNN BASELINE TRAINING REPORT
+============================
+
+Project: Speaker-independent speech emotion recognition on IEMOCAP
+Run date: 08 September 2026
+Status: COMPLETED SUCCESSFULLY
+
+1. EXPERIMENT SUMMARY
+---------------------
+Only the CNN baseline was trained. No Wav2Vec2, HuBERT, or BLOOMZ/LLM model was
+started. The model was trained on IEMOCAP Sessions 1-3, selected using Session 4
+validation performance, and evaluated once on the untouched Session 5 test set.
+This is a speaker-independent split because speakers do not overlap between the
+training, validation, and test sessions.
+
+Training samples:   3,259 (Sessions 1-3)
+Validation samples: 1,031 (Session 4)
+Test samples:       1,241 (Session 5)
+Emotion classes:    angry, happy, neutral, sad
+
+2. MODEL AND TRAINING CONFIGURATION
+-----------------------------------
+Input representation: 64-bin log-Mel spectrogram
+Architecture: 3 convolution blocks (32, 64, and 128 channels), batch
+normalization, ReLU activations, pooling, global adaptive average pooling,
+dropout, and a four-class linear output layer
+Trainable parameters: 93,636
+Maximum audio duration: 12 seconds
+Sample rate: 16,000 Hz
+Batch size: 32
+Optimizer: AdamW
+Learning rate: 0.001
+Weight decay: 0.0001
+Loss: class-weighted cross-entropy
+Maximum epochs: 30
+Early-stopping patience: 7 epochs
+Random seed: 42
+Audio augmentation: none
+Mixed precision: disabled for this CNN run
+
+GPU node: gnode6
+GPU type: NVIDIA Quadro P4000 (8 GB)
+Successful training job: Slurm job 27035
+Training job wall time: 6 minutes 34 seconds
+Evaluation job: Slurm job 27037
+Evaluation wall time: 26 seconds
+
+3. TRAINING AND MODEL SELECTION
+-------------------------------
+Training stopped after epoch 12 because validation macro-F1 had not improved for
+seven consecutive epochs. The best checkpoint was obtained at epoch 5.
+
+Best validation epoch: 5
+Training loss at epoch 5: 1.2091
+Validation loss at epoch 5: 1.1572
+Validation accuracy: 42.97%
+Validation macro-F1: 40.88%
+Validation weighted-F1: 37.99%
+
+The best epoch-5 checkpoint, rather than the final epoch-12 checkpoint, was used
+for test evaluation.
+
+4. FINAL SESSION 5 TEST RESULTS
+-------------------------------
+Accuracy: 38.52%
+Macro-F1: 36.72%
+Weighted-F1: 33.54%
+Macro precision: 39.07%
+Macro recall (unweighted accuracy): 44.78%
+
+Per-class results:
+
+Class       Precision    Recall       F1           Support
+angry       27.00%       69.41%       38.88%       170
+happy       31.88%        4.98%        8.61%       442
+neutral     42.53%       58.59%       49.29%       384
+sad         54.85%       46.12%       50.11%       245
+
+Confusion matrix (rows = actual class, columns = predicted class):
+
+Actual/Predicted    angry    happy    neutral    sad
+angry                 118        7         41      4
+happy                 203       22        167     50
+neutral                94       26        225     39
+sad                    22       14         96    113
+
+5. INTERPRETATION
+-----------------
+The CNN provides a completed end-to-end baseline for the project. Its strongest
+class F1 scores are for sad (50.11%) and neutral (49.29%). Angry speech has high
+recall (69.41%) but low precision, meaning the model over-predicts anger. Happy is
+the main weakness: only 22 of 442 happy test utterances were correctly detected,
+with most confused as angry or neutral. This demonstrates the limitation of a
+small log-Mel CNN on speaker-independent emotion recognition and establishes the
+baseline that later pretrained-speech and frozen-LLM experiments should improve.
+
+6. OUTPUT FILES
+---------------
+Best checkpoint:
+  artifacts/runs/cnn_baseline/best.pt
+Last checkpoint:
+  artifacts/runs/cnn_baseline/last.pt
+Training history:
+  artifacts/runs/cnn_baseline/history.json
+Test metrics:
+  artifacts/runs/cnn_baseline/test/metrics.json
+Confusion matrix data:
+  artifacts/runs/cnn_baseline/test/confusion_matrix.csv
+Confusion matrix image:
+  artifacts/runs/cnn_baseline/test/confusion_matrix.png
+
+7. RUN NOTE
+-----------
+An initial attempt (job 27034) was stopped during epoch 1 after FP16 log-Mel
+feature extraction produced a NaN loss on the P4000. The trainer was corrected to
+allow configuration-controlled automatic mixed precision, and AMP was disabled
+for the CNN configuration. The successful run then completed with finite losses,
+saved checkpoints, early stopping, and an exit code of 0. This did not affect the
+reported successful run or its test results.

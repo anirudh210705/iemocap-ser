@@ -1,0 +1,24 @@
+{
+  "seed": 42,
+  "data_root": "data",
+  "train_csv": "artifacts/splits/fixed/train.csv",
+  "val_csv": "artifacts/splits/fixed/val.csv",
+  "output_dir": "artifacts/runs/wav2vec2_base",
+  "model": "wav2vec2",
+  "pretrained_name": "facebook/wav2vec2-base",
+  "sample_rate": 16000,
+  "max_seconds": 12.0,
+  "batch_size": 4,
+  "gradient_accumulation_steps": 4,
+  "num_workers": 2,
+  "epochs": 20,
+  "learning_rate": 0.00003,
+  "weight_decay": 0.01,
+  "patience": 5,
+  "freeze_feature_encoder": true,
+  "freeze_transformer_layers": 8,
+  "augmentation": "none",
+  "mixup_alpha": 0.0,
+  "class_weighted_loss": true
+}
+

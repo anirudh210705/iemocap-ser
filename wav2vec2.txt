@@ -1,0 +1,140 @@
+MODEL 2: WAV2VEC2 5-FOLD LOSO EVALUATION REPORT
+================================================
+
+Project: Speaker-independent speech emotion recognition on IEMOCAP
+Run date: 09 September 2026
+Status: COMPLETED SUCCESSFULLY
+
+1. FINAL RESULT
+---------------
+Five-fold Leave-One-Session-Out (LOSO) evaluation was completed for Model 2,
+which uses a pretrained Wav2Vec2 encoder followed by attentive pooling and an
+MLP emotion classifier. Each IEMOCAP session served as the test set exactly
+once. A separate session was used for validation, and the other three sessions
+were used for training. This gives a speaker-independent evaluation.
+
+Mean test accuracy: 66.67%
+Accuracy standard deviation: 2.79 percentage points
+Mean test macro-F1: 67.03%
+Macro-F1 standard deviation: 3.18 percentage points
+Mean test weighted-F1: 66.26%
+
+The recommended headline result for Model 2 is therefore:
+
+  Accuracy = 66.67% +/- 2.79%
+  Macro-F1 = 67.03% +/- 3.18%
+
+The standard deviations are sample standard deviations across the five
+session-level test folds.
+
+2. CROSS-VALIDATION PROTOCOL
+----------------------------
+Fold  Test session  Validation session  Training sessions  Test samples
+1     Session 1     Session 5           Sessions 2,3,4     1,085
+2     Session 2     Session 1           Sessions 3,4,5     1,023
+3     Session 3     Session 2           Sessions 1,4,5     1,151
+4     Session 4     Session 3           Sessions 1,2,5     1,031
+5     Session 5     Session 4           Sessions 1,2,3     1,241
+
+All 5,531 selected four-class IEMOCAP utterances were tested exactly once across
+the five folds. The folds were predefined and deterministic rather than chosen
+randomly during training. This is the same protocol used for the CNN baseline,
+so the two models can be compared directly.
+
+3. MODEL AND TRAINING CONFIGURATION
+-----------------------------------
+Input representation: raw 16 kHz speech waveform
+Pretrained speech encoder: facebook/wav2vec2-base
+Classification architecture: Wav2Vec2 encoder, attentive temporal pooling,
+and an MLP four-class classification head
+Emotion classes: angry, happy, neutral, sad
+Maximum audio duration: 12 seconds
+Batch size: 4
+Gradient accumulation steps: 4
+Effective batch size: 16
+Optimizer: AdamW
+Learning rate: 0.00003
+Weight decay: 0.01
+Loss: class-weighted cross-entropy
+Maximum epochs per fold: 20
+Early-stopping patience: 5 epochs
+Random seed: 42
+Augmentation: none
+Automatic mixed precision: enabled
+
+The Wav2Vec2 convolutional feature encoder was frozen. The first eight
+Transformer layers were also frozen, while the upper Transformer layers,
+attentive pooling module, and classification head were trainable. This reduces
+the training cost while adapting higher-level speech representations to emotion
+recognition.
+
+4. PER-FOLD RESULTS
+-------------------
+Fold  Test session  Test accuracy  Test macro-F1  Test weighted-F1
+1     Session 1     64.98%         65.94%         65.34%
+2     Session 2     71.16%         72.51%         70.88%
+3     Session 3     63.86%         64.30%         63.91%
+4     Session 4     67.02%         65.86%         65.24%
+5     Session 5     66.32%         66.56%         65.92%
+
+For each fold, the checkpoint with the highest validation macro-F1 was selected
+for final testing. Test data were not used for checkpoint selection. Fold 2 was
+the strongest result, with 72.51% macro-F1, while Fold 3 was the most difficult,
+with 64.30% macro-F1. The 8.21-point range between these folds shows expected
+speaker and session variation, but every fold substantially exceeded the CNN
+baseline on macro-F1.
+
+5. COMPARISON WITH THE CNN BASELINE
+-----------------------------------
+Metric             CNN baseline  Wav2Vec2 Model 2  Improvement
+Mean accuracy      45.64%        66.67%           +21.03 points
+Mean macro-F1      45.21%        67.03%           +21.82 points
+Mean weighted-F1   43.62%        66.26%           +22.64 points
+
+Fold  CNN macro-F1  Model 2 macro-F1  Improvement
+1     49.59%        65.94%             +16.34 points
+2     42.71%        72.51%             +29.81 points
+3     44.22%        64.30%             +20.08 points
+4     46.30%        65.86%             +19.56 points
+5     43.26%        66.56%             +23.30 points
+
+Model 2 improved macro-F1 in all five held-out sessions. Its average gain of
+21.82 percentage points is large and consistent, demonstrating that pretrained
+self-supervised speech representations transfer much better to emotion
+recognition than the small CNN trained on log-Mel spectrograms from scratch.
+
+6. INTERPRETATION
+-----------------
+The completed experiment shows that Model 2 performs well as a
+speaker-independent speech emotion recognizer. A mean macro-F1 of 67.03% means
+that performance is reasonably balanced across the four emotions rather than
+being driven only by the most frequent class. The relatively small 3.18-point
+standard deviation indicates useful consistency across held-out sessions,
+although Fold 3 remains more challenging than the others.
+
+This result establishes Model 2 as the stronger acoustic model for the project.
+It should be used as the main speech representation/classification baseline for
+the next stage involving the frozen LLM. Any LLM-based experiment must retain
+the same five LOSO folds and evaluation metrics for a fair comparison.
+
+These values should not be described as state-of-the-art without a separate,
+carefully matched literature comparison. They are valid internal results for
+the implemented four-class IEMOCAP LOSO protocol.
+
+7. OUTPUT FILES
+---------------
+Aggregate summary:
+  artifacts/runs/wav2vec2_base/loso/summary.json
+Fold-level result list:
+  artifacts/runs/wav2vec2_base/loso/fold_results.json
+
+The complete server-side fold directories contain the selected checkpoints,
+final checkpoints, exact configurations, epoch histories, test metrics, and
+confusion matrices. The compact aggregate result files have also been copied to
+the local project directory shown above.
+
+8. SCOPE CONFIRMATION
+---------------------
+This report covers only Model 2: Wav2Vec2-base with attentive pooling and an MLP
+classifier. The CNN numbers are included only as a completed baseline for
+comparison. The frozen-LLM model was not trained as part of this experiment.
