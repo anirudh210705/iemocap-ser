@@ -54,7 +54,10 @@ def validate(model: nn.Module, loader: DataLoader, criterion: nn.Module, device:
         masks = batch["attention_mask"].to(device)
         labels = batch["labels"].to(device)
         logits = model(inputs, masks)
-        total_loss += float(criterion(logits, labels)) * len(labels)
+        # Frozen FP16 language models return half-precision class logits even
+        # outside autocast. Compute the loss in FP32 so class weights and
+        # logits always have a compatible dtype.
+        total_loss += float(criterion(logits.float(), labels)) * len(labels)
         targets.extend(labels.cpu().tolist())
         predictions.extend(logits.argmax(dim=-1).cpu().tolist())
     return total_loss / len(loader.dataset), classification_metrics(targets, predictions)
@@ -128,7 +131,11 @@ def train(config: dict[str, object], device_name: str = "auto", resume: str | No
             mixed, first, second, lam = mixup_batch(inputs, labels, float(config.get("mixup_alpha", 0.0)))
             with torch.autocast(device_type=device.type, dtype=torch.float16, enabled=amp_enabled):
                 logits = model(mixed, masks)
-                loss = (lam * criterion(logits, first) + (1 - lam) * criterion(logits, second)) / accumulation
+                float_logits = logits.float()
+                loss = (
+                    lam * criterion(float_logits, first)
+                    + (1 - lam) * criterion(float_logits, second)
+                ) / accumulation
             scaler.scale(loss).backward()
             if (step + 1) % accumulation == 0 or step + 1 == len(train_loader):
                 scaler.unscale_(optimizer)
